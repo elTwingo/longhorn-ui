@@ -12,14 +12,14 @@ const OpenBrowserPlugin = require('open-browser-webpack-plugin');
 var FriendlyErrorsWebpackPlugin = require('friendly-errors-webpack-plugin');
 const endpoint = process.env.LONGHORN_MANAGER_IP || 'http://54.223.25.181:9500/';
 const versionText = require('fs').readFileSync('./version', 'utf8');
-const longhornVersion = versionText ? versionText.trim().substring(1).split('-')[0]: '1.7.0';
+const longhornVersion = versionText ? versionText.trim().substring(1).split('-')[0] : '1.7.0';
 
 module.exports = {
   entry: path.resolve(__dirname, "src", "index.js"),
   devServer: {
     // contentBase: path.resolve(__dirname, 'dist'),
     host: "0.0.0.0",
-    port: 8080,
+    port: 8000,
     open: false,
     hot: true,
     quiet: true,
@@ -98,7 +98,7 @@ module.exports = {
             loader: MiniCssExtractPlugin.loader,
             options: {
               hmr: true,
-                // if hmr does not work, this is a forceful method.
+              // if hmr does not work, this is a forceful method.
               reloadAll: true,
               modifyVars: theme()
             },
@@ -131,7 +131,7 @@ module.exports = {
             loader: MiniCssExtractPlugin.loader,
             options: {
               hmr: true,
-                // if hmr does not work, this is a forceful method.
+              // if hmr does not work, this is a forceful method.
               reloadAll: true,
               modifyVars: theme()
             },
@@ -194,7 +194,6 @@ module.exports = {
         IS_SECURE: JSON.stringify(process.env.IS_SECURE || 'false')
       }
     }),
-    new OpenBrowserPlugin({url: 'http://localhost:8080/'}),
     new ProgressBarPlugin(),
     new FriendlyErrorsWebpackPlugin(),
     new MiniCssExtractPlugin({

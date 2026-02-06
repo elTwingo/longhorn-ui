@@ -1,3 +1,15 @@
+# --- DEV TARGET (webpack-dev-server + bind mount) ---
+FROM node:20-alpine AS dev
+WORKDIR /web
+RUN apk add --no-cache bash curl git
+
+# pour que le file watching marche bien en bind mount
+ENV CHOKIDAR_USEPOLLING=true
+ENV WATCHPACK_POLLING=true
+
+EXPOSE 8000
+CMD ["sh", "-lc", "npm install && npm run dev -- --host 0.0.0.0 --port 8000"]
+
 FROM node:20-alpine as builder
 RUN apk add --no-cache gettext
 RUN mkdir /web
@@ -14,10 +26,10 @@ RUN npm run build
 FROM registry.suse.com/bci/bci-base:15.7
 
 RUN zypper -n ref && \
-    zypper update -y
+  zypper update -y
 
 RUN zypper -n install curl libxml2 bash gettext shadow nginx iproute2 && \
-    rm -f /bin/sh && ln -s /bin/bash /bin/sh
+  rm -f /bin/sh && ln -s /bin/bash /bin/sh
 
 RUN mkdir -p web/dist
 WORKDIR /web

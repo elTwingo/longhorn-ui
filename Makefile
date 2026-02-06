@@ -9,7 +9,7 @@ REPO = longhornio
 NAME = longhorn-ui
 INSTANCE = default
 LONGHORN_MANAGER_IP = http://localhost:9500
-PORT = 8000
+PORT = 8080
 
 BASE_IMAGE = $(shell grep FROM Dockerfile | grep -vi ' AS ' | awk '{print $$2}' )
 
@@ -37,10 +37,14 @@ workflow-image-build-push-secure: buildx-machine
 	MACHINE=$(MACHINE) PUSH='true' VERSION=$(VERSION) IMAGE_NAME=$(NAME) IS_SECURE=true bash scripts/package
 
 stop:
-	docker stop $(NAME)-$(INSTANCE)
+	docker rm --force $(NAME)-$(INSTANCE)
 
 run:
-	docker run -d --name $(NAME)-$(INSTANCE) -p $(PORT):8000 -e LONGHORN_MANAGER_IP=$(LONGHORN_MANAGER_IP) $(REPO)/$(NAME):$(VERSION)
+	docker run -d \
+  --name longhorn-ui-default \
+  --network host \
+  --add-host=longhorn-backend:127.0.0.1 \
+  $(REPO)/$(NAME):$(VERSION)
 
 enter:
 	docker exec -it $(NAME)-$(INSTANCE) /bin/bash
