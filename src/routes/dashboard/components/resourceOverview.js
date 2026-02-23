@@ -88,11 +88,14 @@ class ResourceOverview extends React.Component {
     // a. AvailableForSchedulingStorage = sum(enabledNodes.enabledDisks.AvailableStorage - enabledNodes.enabledDisks.ReservedStorage)
     const computeSchedulableSpace = (blockDiskType) => {
       const result = host.data.filter(n => n.allowScheduling === true).reduce((total, currentNode) => {
-        return total + Object.values(currentNode.disks).filter(d => d.allowScheduling === true).reduce((availabeSpace, currentDisk) => {
+        return total + Object.values(currentNode.disks).filter(d => d.allowScheduling === true).reduce((schedulableSpace, currentDisk) => {
           if (currentDisk.diskType === blockDiskType || !currentDisk.diskType) {
-            return availabeSpace + (currentDisk.storageAvailable - currentDisk.storageReserved)
+            const usable = currentDisk.storageMaximum - currentDisk.storageReserved
+            const remaining = usable - currentDisk.storageScheduled
+            const schedulable = Math.max(0, Math.min(currentDisk.storageAvailable, remaining))
+            return schedulableSpace + schedulable
           }
-          return availabeSpace
+          return schedulableSpace
         }, 0)
       }, 0)
       return result < 0 ? 0 : result
@@ -109,11 +112,24 @@ class ResourceOverview extends React.Component {
         }, 0)
       }, 0)
     }
+
+    const computeScheduledSpace = (blockDiskType) => {
+      return host.data.filter(n => n.allowScheduling === true).reduce((total, currentNode) => {
+        return total + Object.values(currentNode.disks).filter(d => d.allowScheduling === true).reduce((scheduledSpace, currentDisk) => {
+          if (currentDisk.diskType === blockDiskType || !currentDisk.diskType) {
+            return scheduledSpace + currentDisk.storageScheduled
+          }
+          return scheduledSpace
+        }, 0)
+      }, 0)
+    }
+
     const storageSpaceInfo = {
       totalSpace: computeTotalSpace('filesystem'),
       disabledSpace: computeDisabledSpace('filesystem'),
       resevedSpace: computeReservedSpace('filesystem'),
       schedulableSpace: computeSchedulableSpace('filesystem'),
+      scheduledSpace: computeScheduledSpace('filesystem'),
       usedSpace: computeUsedSpace('filesystem'),
     }
     const storageBlockSpaceInfo = {
@@ -142,9 +158,10 @@ class ResourceOverview extends React.Component {
       down: downNode(host.data).length,
     }
 
-    const storageSpaceInfoColors = ['#27AE5F', '#F1C40F', '#78C9CF', '#dee1e3']
+    const storageSpaceInfoColors = ['#27AE5F', '#3B82F6', '#F1C40F', '#78C9CF', '#dee1e3']
     const storageSpaceInfoData = [
       { name: 'Schedulable storage', value: storageSpaceInfo.schedulableSpace },
+      { name: 'Scheduled storage', value: storageSpaceInfo.scheduledSpace },
       { name: 'Reserved storage', value: storageSpaceInfo.resevedSpace },
       { name: 'Used storage', value: storageSpaceInfo.usedSpace },
       { name: 'Disabled storage', value: storageSpaceInfo.disabledSpace },
@@ -157,9 +174,10 @@ class ResourceOverview extends React.Component {
     ]
     const storageSpaceInfoDetails = [
       { name: 'Schedulable', value: formatMib(storageSpaceInfo.schedulableSpace), color: storageSpaceInfoColors[0] },
-      { name: 'Reserved', value: formatMib(storageSpaceInfo.resevedSpace), color: storageSpaceInfoColors[1] },
-      { name: 'Used', value: formatMib(storageSpaceInfo.usedSpace), color: storageSpaceInfoColors[2] },
-      { name: 'Disabled', value: formatMib(storageSpaceInfo.disabledSpace), color: storageSpaceInfoColors[3] },
+      { name: 'Scheduled', value: formatMib(storageSpaceInfo.scheduledSpace), color: storageSpaceInfoColors[1] },
+      { name: 'Reserved', value: formatMib(storageSpaceInfo.resevedSpace), color: storageSpaceInfoColors[2] },
+      { name: 'Used', value: formatMib(storageSpaceInfo.usedSpace), color: storageSpaceInfoColors[3] },
+      { name: 'Disabled', value: formatMib(storageSpaceInfo.disabledSpace), color: storageSpaceInfoColors[4] },
     ]
     const storageBlockSpaceInfoDetails = [
       { name: 'Schedulable', value: formatMib(storageBlockSpaceInfo.schedulableSpace), color: storageSpaceInfoColors[0] },
